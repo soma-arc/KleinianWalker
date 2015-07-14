@@ -2,12 +2,16 @@ package pointSeries;
 
 import group.SL2C;
 
+import java.awt.Color;
 import java.awt.Graphics;
 import java.io.BufferedReader;
+import java.io.DataOutput;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+
+
 
 
 import mobius.Mobius;
@@ -18,9 +22,12 @@ public class PointSeries {
 	public ArrayList<Complex> points = new ArrayList<>();
 	public double scale = 1.0;
 	public Complex translation = Complex.ZERO;
+	public Complex upperLeft, lowerRight;
+	public double width, height;
 
 	public PointSeries(ArrayList<Complex> points){
 		this.points = points;
+		calcBounds();
 	}
 	
 	public ArrayList<Complex> getPointsList(){
@@ -37,7 +44,7 @@ public class PointSeries {
 		}
 		g.fillPolygon(x, y, points.size());
 	}
-	
+
 	public PointSeries transform(SL2C t){
 		ArrayList<Complex> transformedPoints = new ArrayList<>();
 		for(Complex point : points){
@@ -53,6 +60,7 @@ public class PointSeries {
 			newPoints.add(point.mult(scale));
 		}
 		points = newPoints;
+		calcBounds();
 		return this;
 	}
 	
@@ -63,7 +71,39 @@ public class PointSeries {
 			newPoints.add(point.add(translation));
 		}
 		points = newPoints;
+		calcBounds();
 		return this;
+	}
+	
+	private void calcBounds(){
+		double up = Double.MIN_NORMAL;
+		double low = Double.MAX_VALUE;
+		double left = Double.MAX_VALUE;
+		double right = Double.MIN_VALUE;
+		for(Complex point : points){
+			if(up < point.im()){
+				up = point.im();
+			}else if(low > point.im()){
+				low = point.im();
+			}
+			if(right < point.re()){
+				right = point.re();
+			}else if(left > point.re()){
+				left = point.re();
+			}
+		}
+		upperLeft = new Complex(left, up);
+		lowerRight = new Complex(right, low);
+		width = lowerRight.re() - upperLeft.re();
+		height = upperLeft.im() - lowerRight.im();
+	}
+	
+	public boolean isClicked(int mouseX, int mouseY, double magnification, Complex translation){
+		if(upperLeft.re() * magnification + translation.re() < mouseX && mouseX < (upperLeft.re() + width) * magnification + translation.re() &&
+		   lowerRight.im() * magnification + translation.im() < mouseY && mouseY < (lowerRight.im() + height) * magnification + translation.im()){
+			return true;
+		}
+		return false;
 	}
 	
 	public static PointSeries readData(String fileName) throws IOException{
