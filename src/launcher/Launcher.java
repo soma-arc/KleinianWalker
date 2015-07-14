@@ -6,8 +6,8 @@ import ui.Display;
 
 public class Launcher {
 
-	private static final int FRAME_WIDTH = 1000;
-	private static final int FRAME_HEIGHT = 1000;
+	private static final int FRAME_WIDTH = 1500;
+	private static final int FRAME_HEIGHT = 1500;
 
 	public static void main(String[] args) {
 		new Launcher().start();
