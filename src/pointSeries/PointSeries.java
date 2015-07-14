@@ -1,20 +1,23 @@
 package pointSeries;
 
+import group.SL2C;
+
 import java.awt.Graphics;
-import java.awt.Polygon;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 
+
+import mobius.Mobius;
 import number.Complex;
 
 public class PointSeries {
 	public static final String DATA_DIR_NAME = "pointsData\\";
 	public ArrayList<Complex> points = new ArrayList<>();
+	public double scale = 1.0;
+	public Complex translation = Complex.ZERO;
 
 	public PointSeries(ArrayList<Complex> points){
 		this.points = points;
@@ -28,10 +31,39 @@ public class PointSeries {
 		int[] x = new int[points.size() * 2];
 		int[] y = new int[points.size() * 2];
 		for(int i = 0 ; i < points.size() ; i++){
-			x[i] = (int)( points.get(i).re() * magnification);
-			y[i] = (int)( points.get(i).im() * magnification);
+			Complex point = points.get(i);
+			x[i] = (int)( point.re() * magnification);
+			y[i] = (int)( point.im() * magnification);
 		}
 		g.fillPolygon(x, y, points.size());
+	}
+	
+	public PointSeries transform(SL2C t){
+		ArrayList<Complex> transformedPoints = new ArrayList<>();
+		for(Complex point : points){
+			transformedPoints.add(Mobius.onPoint(t, point));
+		}
+		return new PointSeries(transformedPoints);
+	}
+
+	public PointSeries scale(double scale){
+		this.scale *= scale;
+		ArrayList<Complex> newPoints = new ArrayList<>();
+		for(Complex point : points){
+			newPoints.add(point.mult(scale));
+		}
+		points = newPoints;
+		return this;
+	}
+	
+	public PointSeries translate(Complex translation){
+		this.translation = this.translation.add(translation);
+		ArrayList<Complex> newPoints = new ArrayList<>();
+		for(Complex point : points){
+			newPoints.add(point.add(translation));
+		}
+		points = newPoints;
+		return this;
 	}
 	
 	public static PointSeries readData(String fileName) throws IOException{
@@ -41,7 +73,7 @@ public class PointSeries {
 		String line = null;
 		while((line = reader.readLine()) != null){
 			String[] elems = line.split(",");
-			points.add(new Complex(Double.valueOf(elems[0]), Double.valueOf(elems[1])).mult(0.125).add(0.5));
+			points.add(new Complex(Double.valueOf(elems[0]), Double.valueOf(elems[1])));
 		}
 		reader.close();
 		in.close();
