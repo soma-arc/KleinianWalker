@@ -4,6 +4,8 @@ import java.awt.Color;
 import java.awt.GradientPaint;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
@@ -20,10 +22,11 @@ import explorer.LimitSetExplorer;
 import explorer.TransformationExplorer;
 import generator.Recipe;
 import group.SL2C;
+import mobius.Mobius;
 import number.Complex;
 
 public class Display extends JPanel{
-
+	private static Display instance = new Display();
 	private ArrayList<Complex> points = new ArrayList<>();
 	private double magnification = 300;
 	private int maxLevel = 35;
@@ -33,12 +36,13 @@ public class Display extends JPanel{
 	private ArrayList<PointSeries> butterflies = new ArrayList<>();
 	private Complex translation;
 	private Complex t_a, t_b;
-
-	public Display(){
+	private boolean isT_abPlus = true;
+	
+	private Display(){
 		t_a = new Complex(1.91, 0.05);
 		t_b = new Complex(1.91, 0.05);
-		gens = Recipe.parabolicCommutatorGroup(t_a, t_b, true);
-		
+		gens = Recipe.parabolicCommutatorGroup(t_a, t_b, isT_abPlus);
+
 		LimitSetExplorer lsExp = new LimitSetExplorer(gens);
 		points = lsExp.runDFS(maxLevel, threshold);
 		
@@ -47,12 +51,19 @@ public class Display extends JPanel{
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+
+		
 		if(rootButterfly == null) return;
 		TransformationExplorer tExp = new TransformationExplorer(gens);
 		butterflies = tExp.runBFS(5, rootButterfly);
-		
+
 		addMouseListener(new MousePressedAdapter());
 		addMouseMotionListener(new MouseDraggedAdapter());
+		requestFocus();
+	}
+	
+	public static Display getInstance(){
+		return instance;
 	}
 
 	public void paintComponent(Graphics g){
@@ -69,6 +80,8 @@ public class Display extends JPanel{
 		for(PointSeries butterfly : butterflies){
 			butterfly.draw(g2, magnification);
 		}
+		
+
 	}
 
 	private void drawLimitSet(Graphics2D g2){
@@ -80,6 +93,29 @@ public class Display extends JPanel{
 			g2.drawLine((int) (point.re() * magnification), (int) (point.im() * magnification), (int) (point2.re() * magnification), (int) (point2.im() * magnification));
 			g2.drawLine((int) (point2.re() * magnification), (int) (point2.im() * magnification), (int) (point3.re() * magnification), (int) (point3.im() * magnification));
 		}
+	}
+	
+	public void setT_a(Complex t_a){
+		this.t_a = t_a;
+	}
+	
+	public void setT_b(Complex t_b){
+		this.t_b = t_b;
+	}
+	
+	public void setIsT_abPlus(boolean isT_abPlus){
+		this.isT_abPlus = isT_abPlus;
+	}
+	
+	public void recalc(){
+		gens = Recipe.parabolicCommutatorGroup(t_a, t_b, isT_abPlus);
+
+		LimitSetExplorer lsExp = new LimitSetExplorer(gens);
+		points = lsExp.runDFS(maxLevel, threshold);
+		
+		if(rootButterfly == null) return;
+		TransformationExplorer tExp = new TransformationExplorer(gens);
+		butterflies = tExp.runBFS(5, rootButterfly);
 	}
 
 	private Complex previousPos = null;

@@ -1,7 +1,9 @@
 package launcher;
 
+import javax.swing.BoxLayout;
 import javax.swing.JFrame;
 
+import ui.ControlPanel;
 import ui.Display;
 
 public class Launcher {
@@ -17,9 +19,10 @@ public class Launcher {
 		JFrame frame = new JFrame();
 		frame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		Display display = new Display();
-		frame.add(display);
+		frame.getContentPane().setLayout(new BoxLayout(frame.getContentPane(), BoxLayout.X_AXIS));
+		frame.getContentPane().add(Display.getInstance());
+		frame.getContentPane().add(ControlPanel.getInstance());
 		frame.setVisible(true);
-		display.requestFocus();
+		Display.getInstance().requestFocus();
 	}
 }
