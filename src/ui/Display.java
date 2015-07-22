@@ -4,25 +4,20 @@ import java.awt.Color;
 import java.awt.GradientPaint;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
+import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 
 import pointSeries.PointSeries;
-import transformer.ImageTransformer;
 import explorer.LimitSetExplorer;
 import explorer.TransformationExplorer;
 import generator.Recipe;
 import group.SL2C;
-import mobius.Mobius;
 import number.Complex;
 
 public class Display extends JPanel{
@@ -37,6 +32,7 @@ public class Display extends JPanel{
 	private Complex translation;
 	private Complex t_a, t_b;
 	private boolean isT_abPlus = true;
+	private Thread calcLimitSetThread = new Thread();
 	
 	private Display(){
 		t_a = new Complex(1.91, 0.05);
@@ -67,12 +63,15 @@ public class Display extends JPanel{
 	}
 
 	public void paintComponent(Graphics g){
+		requestFocus();
 		Graphics2D g2 = (Graphics2D) g;
-		g.setColor(Color.black);
-		g.fillRect(0, 0, getWidth(), getHeight());
+		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, 
+                RenderingHints.VALUE_ANTIALIAS_ON);
+		g2.setColor(Color.black);
+		g2.fillRect(0, 0, getWidth(), getHeight());
 
 		translation = new Complex(getWidth() / 2, getHeight() / 2);
-		g.translate((int)translation.re(), (int) translation.im());
+		g2.translate((int)translation.re(), (int) translation.im());
 		drawLimitSet(g2);
 		
 		GradientPaint gp = new GradientPaint(10,10,Color.GREEN,50,10,Color.BLUE,true);
@@ -81,7 +80,6 @@ public class Display extends JPanel{
 			butterfly.draw(g2, magnification);
 		}
 		
-
 	}
 
 	private void drawLimitSet(Graphics2D g2){
@@ -110,12 +108,36 @@ public class Display extends JPanel{
 	public void recalc(){
 		gens = Recipe.parabolicCommutatorGroup(t_a, t_b, isT_abPlus);
 
-		LimitSetExplorer lsExp = new LimitSetExplorer(gens);
-		points = lsExp.runDFS(maxLevel, threshold);
-		
+		if(calcLimitSetThread.isAlive())
+			stopCalculation();
+		calcLimitSetThread = new Thread(new CalcLimitSetTask());
+		calcLimitSetThread.start();
+
 		if(rootButterfly == null) return;
 		TransformationExplorer tExp = new TransformationExplorer(gens);
 		butterflies = tExp.runBFS(5, rootButterfly);
+	}
+	
+	public void stopCalculation(){
+		if(calcLimitSetThread.isAlive()){
+			calcLimitSetThread.interrupt();
+		}
+	}
+	
+	private class CalcLimitSetTask implements Runnable{
+		@Override
+		public void run(){
+			synchronized (points) {
+				LimitSetExplorer lsExp = new LimitSetExplorer(gens);
+				try {
+					points = lsExp.runDFS(maxLevel, threshold, calcLimitSetThread);
+				} catch (InterruptedException e) {
+					return;
+				}
+			}
+			ControlPanel.getInstance().setStateLabelText("");
+			repaint();
+		}
 	}
 
 	private Complex previousPos = null;

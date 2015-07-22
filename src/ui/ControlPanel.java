@@ -45,8 +45,9 @@ public class ControlPanel extends JPanel{
 	private JSpinner t_bRealSpinner;
 	private JSpinner t_bImageSpinner;
 	private JCheckBox autoRecalcCheck;
-	private JButton recalcButton;
+	private JButton recalcButton, cancelButton;
 	private JRadioButton t_abPlus, t_abMinus;
+	private JLabel stateLabel;
 	private void setUI(){
 		t_aRealSpinner = createParameterSpinner(1.91, null, null, 0.01);
 		t_aRealSpinner.getModel().addChangeListener(new ParamChangeListener());
@@ -84,21 +85,30 @@ public class ControlPanel extends JPanel{
 		autoRecalcCheck = new JCheckBox("自動再計算");
 		recalcButton = new JButton("再計算");
 		recalcButton.addActionListener(new RecalcButtonActionListener());
+		
+		cancelButton = new JButton("キャンセル");
+		cancelButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				Display.getInstance().stopCalculation();
+				stateLabel.setText("cancelled");
+			}
+		});
+		stateLabel = new JLabel();
 		add(new JLabel("パラメータ"));
 		add(t_aPanel);
 		add(t_bPanel);
 		add(t_abPanel);
 		add(autoRecalcCheck);
 		add(recalcButton);
+		add(cancelButton);
+		add(stateLabel);
 	}
 	
 	private JSpinner createParameterSpinner(Number value, Comparable<?> minimum, Comparable<?> maximum, Number stepSize){
 		JSpinner spinner = new JSpinner(new SpinnerNumberModel(value, minimum, maximum, stepSize));
 		spinner.setMaximumSize(new Dimension(50, 20));
 		return spinner;
-	}
-	
-	public void paintComponent(Graphics g){
 	}
 	
 	private void recalc(){
@@ -110,7 +120,11 @@ public class ControlPanel extends JPanel{
 		Display.getInstance().setT_b(t_b);
 		Display.getInstance().setIsT_abPlus(t_abPlus.isSelected());
 		Display.getInstance().recalc();
-		Display.getInstance().repaint();
+		stateLabel.setText("calculating...");
+	}
+	
+	public void setStateLabelText(String stateText){
+		stateLabel.setText(stateText);
 	}
 	
 	private class ParamChangeListener implements ChangeListener{

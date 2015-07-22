@@ -13,7 +13,7 @@ public class LimitSetExplorer {
 	private int level = 0;
 	private ArrayList<Complex> pointsList;
 	private Complex[][] fixPoints;
-	
+
 	public LimitSetExplorer(SL2C[] gens){
 		this.gens = gens;
 		fixPoints = new Complex[4][4];
@@ -33,7 +33,7 @@ public class LimitSetExplorer {
 	    fixPoints[3][1] = Mobius.getPlusFixPoint(gens[3]);
 	    fixPoints[3][2] = Mobius.getPlusFixPoint(gens[2].mult(gens[1]).mult(gens[0]).mult(gens[3]));
 	}
-	
+
 	private void init(int maxLevel){
 		tags = new int[maxLevel + 1];
 		words = new SL2C[maxLevel + 1];
@@ -46,7 +46,7 @@ public class LimitSetExplorer {
 		tags[1] = 0;
 		level++;
 	}
-	
+
 	public ArrayList<Complex> runDFS(int maxLevel, double threshold){
 		init(maxLevel);
 		do{
@@ -55,6 +55,23 @@ public class LimitSetExplorer {
 			}
 			do{
 				goBackward();
+			}while(level != 0 && isAvailableTurn() == false);
+			turnAndGoForward();
+		}while(level != 1 || tags[1] != 0);
+		return pointsList;
+	}
+	
+	public ArrayList<Complex> runDFS(int maxLevel, double threshold, Thread calcThread) throws InterruptedException{
+		init(maxLevel);
+		do{
+			while(branchTermination(maxLevel, threshold) == false){
+				goForward();
+			}
+			do{
+				goBackward();
+				if(Thread.interrupted()){
+					throw new InterruptedException();
+				}
 			}while(level != 0 && isAvailableTurn() == false);
 			turnAndGoForward();
 		}while(level != 1 || tags[1] != 0);
@@ -80,7 +97,7 @@ public class LimitSetExplorer {
 	private void goBackward(){
 		level--;
 	}
-	
+
 	private void turnAndGoForward(){
 		tags[level + 1] = (tags[level + 1] - 1) % 4;
 	    if (tags[level + 1] == -1) {
@@ -99,14 +116,12 @@ public class LimitSetExplorer {
 		for(int i = 0 ; i < 3 ; i++){
 			z[i] = Mobius.onPoint(words[level], fixPoints[tags[level]][i]);
 		}
-		
 		if((z[0].dist(z[1]) < epsilon  && z[1].dist(z[2]) < epsilon)|| level == maxLevel){
 			pointsList.add(z[0]);
 			pointsList.add(z[1]);
 			pointsList.add(z[2]);
 			return true;
 		}
-		
 		return false;
 	}
 }
