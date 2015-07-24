@@ -44,6 +44,9 @@ public class ControlPanel extends JPanel{
 	private JSpinner t_aImageSpinner; 
 	private JSpinner t_bRealSpinner;
 	private JSpinner t_bImageSpinner;
+	private JSpinner limitSetMaxLevelSpinner;
+	private JSpinner pointSeriesMaxLevelSpinner;
+	private JSpinner thresholdSpinner;
 	private JCheckBox autoRecalcCheck;
 	private JButton recalcButton, cancelButton;
 	private JRadioButton t_abPlus, t_abMinus;
@@ -82,6 +85,24 @@ public class ControlPanel extends JPanel{
 		t_abPanel.add(t_abPlus);
 		t_abPanel.add(t_abMinus);
 		
+		HorizontalPanel limitSetMaxLevelSpinnerPanel = new HorizontalPanel();
+		limitSetMaxLevelSpinner = createParameterSpinner(35, 1, null, 1);
+		limitSetMaxLevelSpinner.getModel().addChangeListener(new ParamChangeListener());
+		limitSetMaxLevelSpinnerPanel.add(new JLabel("limit set max level "));
+		limitSetMaxLevelSpinnerPanel.add(limitSetMaxLevelSpinner);
+		
+		HorizontalPanel thresholdSpinnerPanel = new HorizontalPanel();
+		thresholdSpinner = createParameterSpinner(0.004, 0.0, null, 0.0001);
+		thresholdSpinner.getModel().addChangeListener(new ParamChangeListener());
+		thresholdSpinnerPanel.add(new JLabel("limit set threshold "));
+		thresholdSpinnerPanel.add(thresholdSpinner);
+		
+		HorizontalPanel pointSeriesMaxLevelSpinnerPanel = new HorizontalPanel();
+		pointSeriesMaxLevelSpinner = createParameterSpinner(5, 0, null, 1);
+		pointSeriesMaxLevelSpinner.getModel().addChangeListener(new PointSeriesParamChangeListener());
+		pointSeriesMaxLevelSpinnerPanel.add(new JLabel("point series max level "));
+		pointSeriesMaxLevelSpinnerPanel.add(pointSeriesMaxLevelSpinner);
+		
 		autoRecalcCheck = new JCheckBox("é©ìÆçƒåvéZ");
 		recalcButton = new JButton("çƒåvéZ");
 		recalcButton.addActionListener(new RecalcButtonActionListener());
@@ -99,9 +120,14 @@ public class ControlPanel extends JPanel{
 		add(t_aPanel);
 		add(t_bPanel);
 		add(t_abPanel);
+		add(limitSetMaxLevelSpinnerPanel);
+		add(thresholdSpinnerPanel);
 		add(autoRecalcCheck);
 		add(recalcButton);
 		add(cancelButton);
+		
+		add(pointSeriesMaxLevelSpinnerPanel);
+		
 		add(stateLabel);
 	}
 	
@@ -119,6 +145,9 @@ public class ControlPanel extends JPanel{
 				(double) t_bImageSpinner.getValue());
 		Display.getInstance().setT_b(t_b);
 		Display.getInstance().setIsT_abPlus(t_abPlus.isSelected());
+		Display.getInstance().setLimitSetMaxLevel((int) limitSetMaxLevelSpinner.getValue());
+		Display.getInstance().setThreshold((double) thresholdSpinner.getValue());
+		Display.getInstance().setPointSeriesMaxLevel((int) pointSeriesMaxLevelSpinner.getValue());
 		Display.getInstance().recalc();
 		stateLabel.setText("calculating...");
 	}
@@ -132,6 +161,15 @@ public class ControlPanel extends JPanel{
 		public void stateChanged(ChangeEvent e){
 			if(autoRecalcCheck.isSelected())
 				recalc();
+		}
+	}
+	
+	private class PointSeriesParamChangeListener implements ChangeListener{
+		@Override
+		public void stateChanged(ChangeEvent e){
+			Display.getInstance().setPointSeriesMaxLevel((int) pointSeriesMaxLevelSpinner.getValue());
+			Display.getInstance().recalcPointSeries();
+			Display.getInstance().repaint();
 		}
 	}
 	

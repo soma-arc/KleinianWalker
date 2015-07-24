@@ -24,7 +24,8 @@ public class Display extends JPanel{
 	private static Display instance = new Display();
 	private ArrayList<Complex> points = new ArrayList<>();
 	private double magnification = 300;
-	private int maxLevel = 35;
+	private int limitSetMaxLevel = 35;
+	private int pointSeriesMaxLevel = 5;
 	private double threshold = 0.004;
 	private SL2C[] gens;
 	private PointSeries rootButterfly = null;
@@ -33,14 +34,14 @@ public class Display extends JPanel{
 	private Complex t_a, t_b;
 	private boolean isT_abPlus = true;
 	private Thread calcLimitSetThread = new Thread();
-	
+
 	private Display(){
 		t_a = new Complex(1.91, 0.05);
 		t_b = new Complex(1.91, 0.05);
 		gens = Recipe.parabolicCommutatorGroup(t_a, t_b, isT_abPlus);
 
 		LimitSetExplorer lsExp = new LimitSetExplorer(gens);
-		points = lsExp.runDFS(maxLevel, threshold);
+		points = lsExp.runDFS(limitSetMaxLevel, threshold);
 		
 		try {
 			rootButterfly = PointSeries.readData(PointSeries.DATA_DIR_NAME+"butterfly.points").scale(0.125).translate(new Complex(0.5));
@@ -51,13 +52,13 @@ public class Display extends JPanel{
 		
 		if(rootButterfly == null) return;
 		TransformationExplorer tExp = new TransformationExplorer(gens);
-		butterflies = tExp.runBFS(5, rootButterfly);
+		butterflies = tExp.runBFS(pointSeriesMaxLevel, rootButterfly);
 
 		addMouseListener(new MousePressedAdapter());
 		addMouseMotionListener(new MouseDraggedAdapter());
 		requestFocus();
 	}
-	
+
 	public static Display getInstance(){
 		return instance;
 	}
@@ -79,7 +80,6 @@ public class Display extends JPanel{
 		for(PointSeries butterfly : butterflies){
 			butterfly.draw(g2, magnification);
 		}
-		
 	}
 
 	private void drawLimitSet(Graphics2D g2){
@@ -92,7 +92,7 @@ public class Display extends JPanel{
 			g2.drawLine((int) (point2.re() * magnification), (int) (point2.im() * magnification), (int) (point3.re() * magnification), (int) (point3.im() * magnification));
 		}
 	}
-	
+
 	public void setT_a(Complex t_a){
 		this.t_a = t_a;
 	}
@@ -105,6 +105,18 @@ public class Display extends JPanel{
 		this.isT_abPlus = isT_abPlus;
 	}
 	
+	public void setLimitSetMaxLevel(int maxLevel){
+		this.limitSetMaxLevel = maxLevel;
+	}
+	
+	public void setPointSeriesMaxLevel(int pointSeriesMaxLevel){
+		this.pointSeriesMaxLevel = pointSeriesMaxLevel;
+	}
+	
+	public void setThreshold(double threshold){
+		this.threshold = threshold;
+	}
+	
 	public void recalc(){
 		gens = Recipe.parabolicCommutatorGroup(t_a, t_b, isT_abPlus);
 
@@ -115,7 +127,13 @@ public class Display extends JPanel{
 
 		if(rootButterfly == null) return;
 		TransformationExplorer tExp = new TransformationExplorer(gens);
-		butterflies = tExp.runBFS(5, rootButterfly);
+		butterflies = tExp.runBFS(pointSeriesMaxLevel, rootButterfly);
+	}
+	
+	public void recalcPointSeries(){
+		if(rootButterfly == null) return;
+		TransformationExplorer tExp = new TransformationExplorer(gens);
+		butterflies = tExp.runBFS(pointSeriesMaxLevel, rootButterfly);
 	}
 	
 	public void stopCalculation(){
@@ -130,7 +148,7 @@ public class Display extends JPanel{
 			synchronized (points) {
 				LimitSetExplorer lsExp = new LimitSetExplorer(gens);
 				try {
-					points = lsExp.runDFS(maxLevel, threshold, calcLimitSetThread);
+					points = lsExp.runDFS(limitSetMaxLevel, threshold, calcLimitSetThread);
 				} catch (InterruptedException e) {
 					return;
 				}
@@ -164,7 +182,7 @@ public class Display extends JPanel{
 				previousPos = currentPos;
 				
 				TransformationExplorer tExp = new TransformationExplorer(gens);
-				butterflies = tExp.runBFS(5, rootButterfly);
+				butterflies = tExp.runBFS(pointSeriesMaxLevel, rootButterfly);
 				repaint();
 			}
 		}
