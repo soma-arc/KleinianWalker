@@ -45,6 +45,12 @@ public class PointSeries {
 		g.fillPolygon(x, y, points.size());
 	}
 	
+	public void drawBounds(Graphics g, double magnification){
+		g.setColor(Color.red);
+		g.drawRect((int) (upperLeft.re() * magnification), (int) (upperLeft.im() * magnification - height * magnification),
+				(int)(width * magnification),(int)(height * magnification));
+	}
+	
 	public PointSeries copy(){
 		return new PointSeries(points);
 	}

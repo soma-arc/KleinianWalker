@@ -1,8 +1,6 @@
 package ui;
 
-import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -15,17 +13,12 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSpinner;
-import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.border.BevelBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import number.Complex;
-
-import com.sun.corba.se.spi.orbutil.fsm.ActionBase;
-
-import explorer.LimitSetExplorer;
 
 public class ControlPanel extends JPanel{
 	private static ControlPanel instance = new ControlPanel();
@@ -45,8 +38,7 @@ public class ControlPanel extends JPanel{
 	private JSpinner t_aRealSpinner, t_aImageSpinner; 
 	private JSpinner t_bRealSpinner, t_bImageSpinner;
 	private JSpinner limitSetMaxLevelSpinner;
-	private JSpinner pointSeriesMaxLevelSpinner;
-	private JSpinner thresholdSpinner;
+	private JSpinner pointSeriesMaxLevelSpinner, thresholdSpinner;
 	private JSpinner limitSetMagnificationSpinner;
 	private JCheckBox autoRecalcCheck;
 	private JButton recalcButton, cancelButton;
@@ -55,6 +47,7 @@ public class ControlPanel extends JPanel{
 	private JRadioButton searchPointSeriesButton, stepPointSeriesButton, nonePointSeriesButton;
 	private HorizontalPanel step_aA_ButtonsPanel, step_bB_ButtonsPanel;
 	private HorizontalPanel pointSeriesMaxLevelSpinnerPanel;
+	private JCheckBox drawRootButterflyPosCheck;
 	private void setUI(){
 		t_aRealSpinner = createParameterSpinner(1.91, null, null, 0.01);
 		t_aRealSpinner.getModel().addChangeListener(new ParamChangeListener());
@@ -107,7 +100,9 @@ public class ControlPanel extends JPanel{
 		limitSetMagnificationPanel.add(new JLabel("limit set magnification"));
 		limitSetMagnificationPanel.add(limitSetMagnificationSpinner);
 
-
+		drawRootButterflyPosCheck = new JCheckBox("ルート図形の位置を描画する");
+		drawRootButterflyPosCheck.addChangeListener(new DrawRootButterflyPosChangeListener());
+		
 		pointSeriesMaxLevelSpinnerPanel = new HorizontalPanel();
 		pointSeriesMaxLevelSpinner = createParameterSpinner(5, 0, null, 1);
 		pointSeriesMaxLevelSpinner.getModel().addChangeListener(new PointSeriesParamChangeListener());
@@ -123,7 +118,7 @@ public class ControlPanel extends JPanel{
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				Display.getInstance().stopCalculation();
-				stateLabel.setText("cancelled");
+				stateLabel.setText("state::cancelled");
 			}
 		});
 
@@ -162,7 +157,7 @@ public class ControlPanel extends JPanel{
 		pointSeriesModePanel.add(stepPointSeriesButton);
 		pointSeriesModePanel.add(nonePointSeriesButton);
 		
-		stateLabel = new JLabel();
+		stateLabel = new JLabel("state::");
 		add(new JLabel("パラメータ"));
 		add(t_aPanel);
 		add(t_bPanel);
@@ -173,14 +168,16 @@ public class ControlPanel extends JPanel{
 		add(autoRecalcCheck);
 		add(recalcButton);
 		add(cancelButton);
+		add(stateLabel);
 		
+		add(Box.createRigidArea(new Dimension(0, 20)));
+		add(new JLabel("図形に関する操作"));
 		add(pointSeriesModePanel);
+		add(drawRootButterflyPosCheck);
 		add(pointSeriesMaxLevelSpinnerPanel);
 		add(step_aA_ButtonsPanel);
 		add(step_bB_ButtonsPanel);
 		add(initPointSeriesButton);
-		
-		add(stateLabel);
 	}
 
 	private JSpinner createParameterSpinner(Number value, Comparable<?> minimum, Comparable<?> maximum, Number stepSize){
@@ -201,7 +198,7 @@ public class ControlPanel extends JPanel{
 		Display.getInstance().setThreshold((double) thresholdSpinner.getValue());
 		Display.getInstance().setPointSeriesMaxLevel((int) pointSeriesMaxLevelSpinner.getValue());
 		Display.getInstance().recalc();
-		stateLabel.setText("calculating...");
+		stateLabel.setText("state::calculating...");
 	}
 	
 	public void setStateLabelText(String stateText){
@@ -248,24 +245,35 @@ public class ControlPanel extends JPanel{
 				step_aA_ButtonsPanel.setVisible(false);
 				step_bB_ButtonsPanel.setVisible(false);
 				pointSeriesMaxLevelSpinnerPanel.setVisible(true);
+				drawRootButterflyPosCheck.setVisible(true);
 			}else if(stepPointSeriesButton.isSelected()){
 				Display.getInstance().setPointSeriesDisplayMode(PointSeriesDisplayMode.STEP);
 				step_aA_ButtonsPanel.setVisible(true);
 				step_bB_ButtonsPanel.setVisible(true);
 				pointSeriesMaxLevelSpinnerPanel.setVisible(false);
+				drawRootButterflyPosCheck.setVisible(false);
 			}else{
 				Display.getInstance().setPointSeriesDisplayMode(PointSeriesDisplayMode.NONE);
 				step_aA_ButtonsPanel.setVisible(false);
 				step_bB_ButtonsPanel.setVisible(false);
 				pointSeriesMaxLevelSpinnerPanel.setVisible(false);
+				drawRootButterflyPosCheck.setVisible(false);
 			}
+			Display.getInstance().repaint();
+		}
+	}
+	
+	private class DrawRootButterflyPosChangeListener implements ChangeListener{
+		@Override
+		public void stateChanged(ChangeEvent e){
+			Display.getInstance().setDrawRootButterflyPosition(drawRootButterflyPosCheck.isSelected());
 			Display.getInstance().repaint();
 		}
 	}
 	
 	private class StepButtonListener implements ActionListener{
 		int generatorIndex;
-		public StepButtonListener(int generatorIndex){
+		private StepButtonListener(int generatorIndex){
 			this.generatorIndex = generatorIndex;
 		}
 		

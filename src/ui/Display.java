@@ -36,6 +36,7 @@ public class Display extends JPanel{
 	private boolean isT_abPlus = true;
 	private Thread calcLimitSetThread = new Thread();
 	private PointSeriesDisplayMode pointSeriesDisplayMode = PointSeriesDisplayMode.SEARCH;
+	private boolean drawRootButterflyPosition = false;
 
 	private Display(){
 		t_a = new Complex(1.91, 0.05);
@@ -91,13 +92,18 @@ public class Display extends JPanel{
 	}
 	
 	private void drawPointSeries(Graphics2D g2){
-		GradientPaint gp = new GradientPaint(10,10,Color.GREEN,50,10,Color.BLUE,true);
-	    g2.setPaint(gp);
 	    if(pointSeriesDisplayMode == PointSeriesDisplayMode.SEARCH){
+	    	if(drawRootButterflyPosition){
+	    		rootButterfly.drawBounds(g2, limitSetMagnification);
+	    	}
+	    	GradientPaint gp = new GradientPaint(10,10,Color.GREEN,50,10,Color.BLUE,true);
+		    g2.setPaint(gp);
 	    	for(PointSeries butterfly : butterflies){
 				butterfly.draw(g2, limitSetMagnification);
 			}
 		}else if(pointSeriesDisplayMode == PointSeriesDisplayMode.STEP){
+			GradientPaint gp = new GradientPaint(10,10,Color.GREEN,50,10,Color.BLUE,true);
+		    g2.setPaint(gp);
 			stepButterfly.draw(g2, limitSetMagnification);
 		}
 	}
@@ -132,6 +138,10 @@ public class Display extends JPanel{
 	
 	public void setPointSeriesDisplayMode(PointSeriesDisplayMode mode){
 		this.pointSeriesDisplayMode = mode;
+	}
+	
+	public void setDrawRootButterflyPosition(boolean drawRootButterflyPosition){
+		this.drawRootButterflyPosition = drawRootButterflyPosition;
 	}
 	
 	public void recalc(){
@@ -189,7 +199,7 @@ public class Display extends JPanel{
 					return;
 				}
 			}
-			ControlPanel.getInstance().setStateLabelText("");
+			ControlPanel.getInstance().setStateLabelText("state::");
 			repaint();
 		}
 	}
