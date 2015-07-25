@@ -44,6 +44,10 @@ public class PointSeries {
 		}
 		g.fillPolygon(x, y, points.size());
 	}
+	
+	public PointSeries copy(){
+		return new PointSeries(points);
+	}
 
 	public PointSeries transform(SL2C t){
 		ArrayList<Complex> transformedPoints = new ArrayList<>();

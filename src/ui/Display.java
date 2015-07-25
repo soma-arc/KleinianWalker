@@ -23,17 +23,19 @@ import number.Complex;
 public class Display extends JPanel{
 	private static Display instance = new Display();
 	private ArrayList<Complex> points = new ArrayList<>();
-	private double magnification = 300;
+	private double limitSetMagnification = 300;
 	private int limitSetMaxLevel = 35;
 	private int pointSeriesMaxLevel = 5;
 	private double threshold = 0.004;
 	private SL2C[] gens;
 	private PointSeries rootButterfly = null;
+	private PointSeries stepButterfly, initialButterfly;
 	private ArrayList<PointSeries> butterflies = new ArrayList<>();
 	private Complex translation;
 	private Complex t_a, t_b;
 	private boolean isT_abPlus = true;
 	private Thread calcLimitSetThread = new Thread();
+	private PointSeriesDisplayMode pointSeriesDisplayMode = PointSeriesDisplayMode.SEARCH;
 
 	private Display(){
 		t_a = new Complex(1.91, 0.05);
@@ -44,15 +46,15 @@ public class Display extends JPanel{
 		points = lsExp.runDFS(limitSetMaxLevel, threshold);
 		
 		try {
-			rootButterfly = PointSeries.readData(PointSeries.DATA_DIR_NAME+"butterfly.points").scale(0.125).translate(new Complex(0.5));
+			initialButterfly = PointSeries.readData(PointSeries.DATA_DIR_NAME+"butterfly.points").scale(0.125).translate(new Complex(0.5));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 
-		
-		if(rootButterfly == null) return;
-		TransformationExplorer tExp = new TransformationExplorer(gens);
-		butterflies = tExp.runBFS(pointSeriesMaxLevel, rootButterfly);
+		stepButterfly = initialButterfly.copy(); 
+		rootButterfly = initialButterfly.copy();
+
+		recalcPointSeries();
 
 		addMouseListener(new MousePressedAdapter());
 		addMouseMotionListener(new MouseDraggedAdapter());
@@ -74,12 +76,7 @@ public class Display extends JPanel{
 		translation = new Complex(getWidth() / 2, getHeight() / 2);
 		g2.translate((int)translation.re(), (int) translation.im());
 		drawLimitSet(g2);
-		
-		GradientPaint gp = new GradientPaint(10,10,Color.GREEN,50,10,Color.BLUE,true);
-	    g2.setPaint(gp);
-		for(PointSeries butterfly : butterflies){
-			butterfly.draw(g2, magnification);
-		}
+		drawPointSeries(g2);
 	}
 
 	private void drawLimitSet(Graphics2D g2){
@@ -88,8 +85,20 @@ public class Display extends JPanel{
 			Complex point = points.get(i);
 			Complex point2 = points.get(i+1);
 			Complex point3 = points.get(i+2);
-			g2.drawLine((int) (point.re() * magnification), (int) (point.im() * magnification), (int) (point2.re() * magnification), (int) (point2.im() * magnification));
-			g2.drawLine((int) (point2.re() * magnification), (int) (point2.im() * magnification), (int) (point3.re() * magnification), (int) (point3.im() * magnification));
+			g2.drawLine((int) (point.re() * limitSetMagnification), (int) (point.im() * limitSetMagnification), (int) (point2.re() * limitSetMagnification), (int) (point2.im() * limitSetMagnification));
+			g2.drawLine((int) (point2.re() * limitSetMagnification), (int) (point2.im() * limitSetMagnification), (int) (point3.re() * limitSetMagnification), (int) (point3.im() * limitSetMagnification));
+		}
+	}
+	
+	private void drawPointSeries(Graphics2D g2){
+		GradientPaint gp = new GradientPaint(10,10,Color.GREEN,50,10,Color.BLUE,true);
+	    g2.setPaint(gp);
+	    if(pointSeriesDisplayMode == PointSeriesDisplayMode.SEARCH){
+	    	for(PointSeries butterfly : butterflies){
+				butterfly.draw(g2, limitSetMagnification);
+			}
+		}else if(pointSeriesDisplayMode == PointSeriesDisplayMode.STEP){
+			stepButterfly.draw(g2, limitSetMagnification);
 		}
 	}
 
@@ -117,6 +126,14 @@ public class Display extends JPanel{
 		this.threshold = threshold;
 	}
 	
+	public void setLimitSetMagnification(int limitSetMagnification){
+		this.limitSetMagnification = limitSetMagnification;
+	}
+	
+	public void setPointSeriesDisplayMode(PointSeriesDisplayMode mode){
+		this.pointSeriesDisplayMode = mode;
+	}
+	
 	public void recalc(){
 		gens = Recipe.parabolicCommutatorGroup(t_a, t_b, isT_abPlus);
 
@@ -125,15 +142,34 @@ public class Display extends JPanel{
 		calcLimitSetThread = new Thread(new CalcLimitSetTask());
 		calcLimitSetThread.start();
 
-		if(rootButterfly == null) return;
-		TransformationExplorer tExp = new TransformationExplorer(gens);
-		butterflies = tExp.runBFS(pointSeriesMaxLevel, rootButterfly);
+		recalcPointSeries();
 	}
 	
 	public void recalcPointSeries(){
 		if(rootButterfly == null) return;
-		TransformationExplorer tExp = new TransformationExplorer(gens);
-		butterflies = tExp.runBFS(pointSeriesMaxLevel, rootButterfly);
+		if(pointSeriesDisplayMode == PointSeriesDisplayMode.SEARCH){
+			TransformationExplorer tExp = new TransformationExplorer(gens);
+			butterflies = tExp.runBFS(pointSeriesMaxLevel, rootButterfly);
+		}else if(pointSeriesDisplayMode == PointSeriesDisplayMode.STEP){
+			
+		}else{
+			
+		}
+		repaint();
+	}
+	
+	public void stepPointSeries(int generatorIndex){
+		if(generatorIndex < 0 || gens.length <= generatorIndex) return;
+		stepButterfly = stepButterfly.transform(gens[generatorIndex]);
+	}
+	
+	public void initPointSeries(){
+		if(pointSeriesDisplayMode == PointSeriesDisplayMode.SEARCH){
+			rootButterfly = initialButterfly.copy();
+			recalcPointSeries();
+		}else if(pointSeriesDisplayMode == PointSeriesDisplayMode.STEP){
+			stepButterfly = initialButterfly.copy();
+		}
 	}
 	
 	public void stopCalculation(){
@@ -162,8 +198,8 @@ public class Display extends JPanel{
 	private class MousePressedAdapter extends MouseAdapter{
 		@Override
 		public void mousePressed(MouseEvent e){
-			if(rootButterfly.isClicked(e.getX(), e.getY(), magnification, translation)){
-				previousPos = new Complex((e.getX() - translation.re()) / magnification, (e.getY()- translation.im()) / magnification);
+			if(rootButterfly.isClicked(e.getX(), e.getY(), limitSetMagnification, translation)){
+				previousPos = new Complex((e.getX() - translation.re()) / limitSetMagnification, (e.getY()- translation.im()) / limitSetMagnification);
 			}
 		}
 		
@@ -176,8 +212,8 @@ public class Display extends JPanel{
 	private class MouseDraggedAdapter extends MouseMotionAdapter{
 		@Override
 		public void mouseDragged(MouseEvent e){
-			if(previousPos != null){
-				Complex currentPos = new Complex((e.getX() - translation.re()) / magnification, (e.getY()- translation.im()) / magnification);
+			if(previousPos != null && pointSeriesDisplayMode == PointSeriesDisplayMode.SEARCH){
+				Complex currentPos = new Complex((e.getX() - translation.re()) / limitSetMagnification, (e.getY()- translation.im()) / limitSetMagnification);
 				rootButterfly.translate(currentPos.sub(previousPos));
 				previousPos = currentPos;
 				
