@@ -80,10 +80,10 @@ public class PointSeries {
 	}
 	
 	private void calcBounds(){
-		double up = Double.MIN_NORMAL;
+		double up = -Double.MAX_VALUE;
 		double low = Double.MAX_VALUE;
 		double left = Double.MAX_VALUE;
-		double right = Double.MIN_VALUE;
+		double right = -Double.MAX_VALUE;
 		for(Complex point : points){
 			if(up < point.im()){
 				up = point.im();
@@ -98,8 +98,8 @@ public class PointSeries {
 		}
 		upperLeft = new Complex(left, up);
 		lowerRight = new Complex(right, low);
-		width = lowerRight.re() - upperLeft.re();
-		height = upperLeft.im() - lowerRight.im();
+		width = Math.abs(lowerRight.re() - upperLeft.re());
+		height = Math.abs(upperLeft.im() - lowerRight.im());
 	}
 	
 	public boolean isClicked(int mouseX, int mouseY, double magnification, Complex translation){
