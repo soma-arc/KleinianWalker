@@ -18,6 +18,7 @@ public class Launcher {
 	public void start(){
 		JFrame frame = new JFrame();
 		frame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
+		frame.setTitle("KleinianWalker");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(new BoxLayout(frame.getContentPane(), BoxLayout.X_AXIS));
 		frame.getContentPane().add(Display.getInstance());
