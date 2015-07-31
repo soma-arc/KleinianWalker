@@ -1,14 +1,17 @@
 package ui;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.geom.Point2D;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JColorChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
@@ -17,6 +20,8 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.border.BevelBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+
+import com.sun.corba.se.spi.orbutil.fsm.Action;
 
 import number.Complex;
 
@@ -158,6 +163,7 @@ public class ControlPanel extends JPanel{
 		pointSeriesModePanel.add(nonePointSeriesButton);
 		
 		stateLabel = new JLabel("state::");
+		
 		add(new JLabel("パラメータ"));
 		add(t_aPanel);
 		add(t_bPanel);
@@ -178,6 +184,142 @@ public class ControlPanel extends JPanel{
 		add(step_aA_ButtonsPanel);
 		add(step_bB_ButtonsPanel);
 		add(initPointSeriesButton);
+		
+		add(Box.createRigidArea(new Dimension(10, 30)));
+		
+		setColorControl();
+	}
+	
+	JSpinner p1XSpinner, p1YSpinner, p2XSpinner, p2YSpinner;
+	private void setColorControl(){
+		add(new JLabel("色"));
+		HorizontalPanel backgroundPanel = new HorizontalPanel();
+		backgroundPanel.add(new JLabel("背景色"));
+		final JLabel backgroundColorLabel = new JLabel("　　　　");
+		backgroundColorLabel.setOpaque(true);
+		backgroundColorLabel.setBackground(Color.black);
+		backgroundPanel.add(backgroundColorLabel);
+		JButton backgroundButton = new JButton("変更");
+		backgroundPanel.add(backgroundButton);
+		backgroundButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				Color c = JColorChooser.showDialog(ControlPanel.this, "背景色の選択", Color.black);
+				if(c == null) return;
+				Display.getInstance().setBackgroundColor(c);
+				backgroundColorLabel.setBackground(c);
+			}
+		});
+
+		add(backgroundPanel);
+		
+		HorizontalPanel colorChangeButtonPanel = new HorizontalPanel();
+		JRadioButton gradientButton = new JRadioButton("グラデーション");
+		JRadioButton singleButton = new JRadioButton("単色");
+		gradientButton.setSelected(true);
+		ButtonGroup g = new ButtonGroup();
+		g.add(singleButton);
+		g.add(gradientButton);
+		colorChangeButtonPanel.add(singleButton);
+		colorChangeButtonPanel.add(gradientButton);
+		HorizontalPanel limitSetColorPanel = new HorizontalPanel();
+//		add(colorChangeButtonPanel);
+		add(limitSetColorPanel);
+		
+		HorizontalPanel initialHuePanel = new HorizontalPanel();
+		final JSpinner initialHueSpinner = createParameterSpinner(0.0f, 0.0f, null, 0.01f);
+		initialHueSpinner.addChangeListener(new ChangeListener() {
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				Display.getInstance().setInitialHue((float)initialHueSpinner.getValue());
+			}
+		});
+		initialHuePanel.add(new JLabel("initial hue "));
+		initialHuePanel.add(initialHueSpinner);
+		add(initialHuePanel);
+		
+		HorizontalPanel hueStepPanel = new HorizontalPanel();
+		final JSpinner hueStepSpinner = createParameterSpinner(0.005f, 0.0f, null, 0.005f);
+		hueStepSpinner.addChangeListener(new ChangeListener() {
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				Display.getInstance().setInitialHue((float)hueStepSpinner.getValue());
+			}
+		});
+		hueStepSpinner.setMaximumSize(new Dimension(120, 20));
+		JSpinner.NumberEditor editor = new JSpinner.NumberEditor(hueStepSpinner, "0.000");
+		hueStepSpinner.setEditor(editor); 
+		hueStepPanel.add(new JLabel("hue step "));
+		hueStepPanel.add(hueStepSpinner);
+		add(hueStepPanel);
+		
+		add(Box.createRigidArea(new Dimension(10, 30)));
+		
+		HorizontalPanel p1Panel = new HorizontalPanel();
+		p1Panel.add(new JLabel("point 1 "));
+		p1XSpinner = createParameterSpinner((int) Display.getInstance().getPointSeriesGradientPoint1().getX(), null, null, 1);
+		p1YSpinner = createParameterSpinner((int) Display.getInstance().getPointSeriesGradientPoint1().getY(), null, null, 1);
+		p1XSpinner.addChangeListener(new ChangeGradientPointListener());
+		p1YSpinner.addChangeListener(new ChangeGradientPointListener());
+		p1Panel.add(p1XSpinner);
+		p1Panel.add(p1YSpinner);
+		add(p1Panel);
+		HorizontalPanel color1Panel = new HorizontalPanel();
+		final JLabel color1Label = new JLabel("　　　　");
+		color1Label.setOpaque(true);
+		color1Label.setBackground(Display.getInstance().getPointSeriesGradientColor1());
+		color1Panel.add(new JLabel("color1"));
+		color1Panel.add(color1Label);
+		JButton color1Button = new JButton("変更");
+		color1Panel.add(color1Button);
+		color1Button.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				Color c = JColorChooser.showDialog(ControlPanel.this, "色の選択", Display.getInstance().getPointSeriesGradientColor1());
+				if(c == null) return;
+				Display.getInstance().setPointSeriesGradientColor1(c);
+				color1Label.setBackground(c);
+			}
+		});
+		add(color1Panel);
+		
+		
+		HorizontalPanel p2Panel = new HorizontalPanel();
+		p2Panel.add(new JLabel("point 2 "));
+		p2XSpinner = createParameterSpinner((int) Display.getInstance().getPointSeriesGradientPoint2().getX(), null, null, 1);
+		p2YSpinner = createParameterSpinner((int) Display.getInstance().getPointSeriesGradientPoint2().getY(), null, null, 1);
+		p2XSpinner.addChangeListener(new ChangeGradientPointListener());
+		p2YSpinner.addChangeListener(new ChangeGradientPointListener());
+		p2Panel.add(p2XSpinner);
+		p2Panel.add(p2YSpinner);
+		add(p2Panel);
+		HorizontalPanel color2Panel = new HorizontalPanel();
+		final JLabel color2Label = new JLabel("　　　　");
+		color2Label.setOpaque(true);
+		color2Label.setBackground(Display.getInstance().getPointSeriesGradientColor2());
+		color2Panel.add(new JLabel("color2"));
+		color2Panel.add(color2Label);
+		JButton color2Button = new JButton("変更");
+		color2Button.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				Color c = JColorChooser.showDialog(ControlPanel.this, "色の選択", Display.getInstance().getPointSeriesGradientColor2());
+				if(c == null) return;
+				Display.getInstance().setPointSeriesGradientColor2(c);
+				color2Label.setBackground(c);
+			}
+		});
+		color2Panel.add(color2Button);
+		add(color2Panel);
+	}
+	
+	private class ChangeGradientPointListener implements ChangeListener{
+		@Override
+		public void stateChanged(ChangeEvent e) {
+			Display.getInstance().setPointSeriesGradientPoint1(new Point2D.Double((int) p1XSpinner.getValue(), (int) p1YSpinner.getValue()));
+			Display.getInstance().setPointSeriesGradientPoint2(new Point2D.Double((int) p2XSpinner.getValue(), (int) p2YSpinner.getValue()));
+			Display.getInstance().repaint();
+		}
 	}
 
 	private JSpinner createParameterSpinner(Number value, Comparable<?> minimum, Comparable<?> maximum, Number stepSize){

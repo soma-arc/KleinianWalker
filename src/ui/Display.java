@@ -8,6 +8,7 @@ import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
+import java.awt.geom.Point2D;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -36,8 +37,11 @@ public class Display extends JPanel{
 	private boolean isT_abPlus = true;
 	private Thread calcLimitSetThread = new Thread();
 	private PointSeriesDisplayMode pointSeriesDisplayMode = PointSeriesDisplayMode.SEARCH;
+	private ColorMode limitSetColorMode = ColorMode.GRADIENT;
+	private ColorMode pointSeriesColorMode = ColorMode.GRADIENT;
 	private boolean drawRootButterflyPosition = false;
-
+	private Color backgroundColor = Color.black;
+	
 	private Display(){
 		t_a = new Complex(1.91, 0.05);
 		t_b = new Complex(1.91, 0.05);
@@ -71,7 +75,7 @@ public class Display extends JPanel{
 		Graphics2D g2 = (Graphics2D) g;
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, 
                 RenderingHints.VALUE_ANTIALIAS_ON);
-		g2.setColor(Color.black);
+		g2.setColor(backgroundColor);
 		g2.fillRect(0, 0, getWidth(), getHeight());
 
 		translation = new Complex(getWidth() / 2, getHeight() / 2);
@@ -79,31 +83,42 @@ public class Display extends JPanel{
 		drawLimitSet(g2);
 		drawPointSeries(g2);
 	}
-
+	
+	private float initialHue = 0.0f;
+	private float hueStep = 0.00001f;
 	private void drawLimitSet(Graphics2D g2){
-		g2.setColor(Color.ORANGE);
+		float hue = initialHue;
 		for(int i = 0 ; i < points.size(); i+= 3){
+			g2.setColor(Color.getHSBColor(hue, 1.0f, 1.0f));
 			Complex point = points.get(i);
 			Complex point2 = points.get(i+1);
 			Complex point3 = points.get(i+2);
 			g2.drawLine((int) (point.re() * limitSetMagnification), (int) (point.im() * limitSetMagnification), (int) (point2.re() * limitSetMagnification), (int) (point2.im() * limitSetMagnification));
 			g2.drawLine((int) (point2.re() * limitSetMagnification), (int) (point2.im() * limitSetMagnification), (int) (point3.re() * limitSetMagnification), (int) (point3.im() * limitSetMagnification));
+
+			hue += hueStep;
+			
 		}
 	}
 	
+	private Point2D pointSeriesGradientPoint1 = new Point2D.Double(10, 10);
+	private Point2D pointSeriesGradientPoint2 = new Point2D.Double(200, 10);
+	private Color pointSeriesGradientColor1 = Color.green;
+	private Color pointSeriesGradientColor2 = Color.blue;
+	private boolean cyclic = true;
 	private void drawPointSeries(Graphics2D g2){
+		if(pointSeriesColorMode == ColorMode.GRADIENT){
+			GradientPaint gp = new GradientPaint(pointSeriesGradientPoint1, pointSeriesGradientColor1, pointSeriesGradientPoint2, pointSeriesGradientColor2, cyclic);
+			g2.setPaint(gp);
+		}
 	    if(pointSeriesDisplayMode == PointSeriesDisplayMode.SEARCH){
-	    	if(drawRootButterflyPosition){
-	    		rootButterfly.drawBounds(g2, limitSetMagnification);
-	    	}
-	    	GradientPaint gp = new GradientPaint(10,10,Color.GREEN,50,10,Color.BLUE,true);
-		    g2.setPaint(gp);
 	    	for(PointSeries butterfly : butterflies){
 				butterfly.draw(g2, limitSetMagnification);
 			}
+	    	if(drawRootButterflyPosition){
+	    		rootButterfly.drawBounds(g2, limitSetMagnification);
+	    	}
 		}else if(pointSeriesDisplayMode == PointSeriesDisplayMode.STEP){
-			GradientPaint gp = new GradientPaint(10,10,Color.GREEN,50,10,Color.BLUE,true);
-		    g2.setPaint(gp);
 			stepButterfly.draw(g2, limitSetMagnification);
 		}
 	}
@@ -144,6 +159,63 @@ public class Display extends JPanel{
 		this.drawRootButterflyPosition = drawRootButterflyPosition;
 	}
 	
+	public void setBackgroundColor(Color backgroundColor){
+		this.backgroundColor = backgroundColor;
+		repaint();
+	}
+
+	public void setInitialHue(float initialHue){
+		this.initialHue = initialHue;
+		repaint();
+	}
+	
+	public void setHueStep(float hueStep){
+		this.hueStep = hueStep;
+		repaint();
+	}
+	
+	public Point2D getPointSeriesGradientPoint1() {
+		return pointSeriesGradientPoint1;
+	}
+
+	public void setPointSeriesGradientPoint1(Point2D pointSeriesGradientPoint1) {
+		this.pointSeriesGradientPoint1 = pointSeriesGradientPoint1;
+	}
+
+	public Point2D getPointSeriesGradientPoint2() {
+		return pointSeriesGradientPoint2;
+	}
+
+	public void setPointSeriesGradientPoint2(Point2D pointSeriesGradientPoint2) {
+		this.pointSeriesGradientPoint2 = pointSeriesGradientPoint2;
+	}
+
+	public Color getPointSeriesGradientColor1() {
+		return pointSeriesGradientColor1;
+	}
+
+	public void setPointSeriesGradientColor1(Color pointSeriesGradientColor1) {
+		this.pointSeriesGradientColor1 = pointSeriesGradientColor1;
+		repaint();
+	}
+
+	public Color getPointSeriesGradientColor2() {
+		return pointSeriesGradientColor2;
+	}
+
+	public void setPointSeriesGradientColor2(Color pointSeriesGradientColor2) {
+		this.pointSeriesGradientColor2 = pointSeriesGradientColor2;
+		repaint();
+	}
+
+	public boolean isCyclic() {
+		return cyclic;
+	}
+
+	public void setCyclic(boolean cyclic) {
+		this.cyclic = cyclic;
+	}
+
 	public void recalc(){
 		gens = Recipe.parabolicCommutatorGroup(t_a, t_b, isT_abPlus);
 
