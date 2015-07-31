@@ -159,7 +159,7 @@ public class Display extends JPanel{
 		if(rootButterfly == null) return;
 		if(pointSeriesDisplayMode == PointSeriesDisplayMode.SEARCH){
 			TransformationExplorer tExp = new TransformationExplorer(gens);
-			butterflies = tExp.runBFS(pointSeriesMaxLevel, rootButterfly);
+			butterflies = tExp.runBFS(pointSeriesMaxLevel, rootButterfly, limitSetMagnification);
 		}else if(pointSeriesDisplayMode == PointSeriesDisplayMode.STEP){
 			
 		}else{
@@ -228,7 +228,7 @@ public class Display extends JPanel{
 				previousPos = currentPos;
 				
 				TransformationExplorer tExp = new TransformationExplorer(gens);
-				butterflies = tExp.runBFS(pointSeriesMaxLevel, rootButterfly);
+				butterflies = tExp.runBFS(pointSeriesMaxLevel, rootButterfly, limitSetMagnification);
 				repaint();
 			}
 		}

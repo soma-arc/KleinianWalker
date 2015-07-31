@@ -34,6 +34,14 @@ public class PointSeries {
 		return points;
 	}
 	
+	public double getWidth(){
+		return width;
+	}
+	
+	public double getHeight(){
+		return height;
+	}
+	
 	public void draw(Graphics g, double magnification){
 		int[] x = new int[points.size() * 2];
 		int[] y = new int[points.size() * 2];
